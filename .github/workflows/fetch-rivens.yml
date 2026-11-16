@@ -34,8 +34,8 @@ jobs:
         run: |
           GITEE_USER=$(curl -s "https://gitee.com/api/v5/user?access_token=${GITEE_TOKEN}" | python3 -c "import json,sys; print(json.load(sys.stdin)['login'])")
           echo "Gitee 用户: $GITEE_USER"
-          git config user.name "wf-data-bot"
-          git config user.email "actions@users.noreply.github.com"
+          git config --global user.name "wf-data-bot"
+          git config --global user.email "actions@users.noreply.github.com"
           git clone --depth 1 "https://${GITEE_USER}:${GITEE_TOKEN}@gitee.com/${GITEE_USER}/wf-data.git" gitee-mirror
           cp rivens_pc.json gitee-mirror/
           cd gitee-mirror
