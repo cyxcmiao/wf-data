@@ -1,0 +1,41 @@
+# 放到仓库 .github/workflows/fetch-rivens.yml
+# 每 6 小时抓一次裂罅行情快照并提交到本仓库；也可在 Actions 页手动触发
+name: fetch rivens
+on:
+  schedule:
+    - cron: "17 */6 * * *"
+  workflow_dispatch:
+permissions:
+  contents: write
+jobs:
+  fetch:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: python fetch_rivens.py
+      - name: commit snapshot
+        run: |
+          git config user.name "wf-data-bot"
+          git config user.email "actions@users.noreply.github.com"
+          git add rivens_pc.json
+          git diff --cached --quiet || git commit -m "snapshot $(date -u +%FT%TZ)"
+          git push
+      # 可选：同步到 Gitee 镜像（国内访问更快）。
+      # 前置：Gitee 建同名公开仓库 wf-data；GitHub 仓库 Secrets 添加 GITEE_TOKEN
+      #（Gitee 个人设置→私人令牌，勾选 projects）。没配 Secrets 时此步骤自动跳过。
+      - name: push to gitee mirror
+        env:
+          GITEE_TOKEN: ${{ secrets.GITEE_TOKEN }}
+        if: env.GITEE_TOKEN != ''
+        run: |
+          git config user.name "wf-data-bot"
+          git config user.email "actions@users.noreply.github.com"
+          git clone --depth 1 "https://cyxcmiao:${GITEE_TOKEN}@gitee.com/cyxcmiao/wf-data.git" gitee-mirror
+          cp rivens_pc.json gitee-mirror/
+          cd gitee-mirror
+          git add rivens_pc.json
+          git diff --cached --quiet || git commit -m "snapshot $(date -u +%FT%TZ)"
+          git push
