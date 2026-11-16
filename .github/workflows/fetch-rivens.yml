@@ -26,14 +26,17 @@ jobs:
       # 可选：同步到 Gitee 镜像（国内访问更快）。
       # 前置：Gitee 建同名公开仓库 wf-data；GitHub 仓库 Secrets 添加 GITEE_TOKEN
       #（Gitee 个人设置→私人令牌，勾选 projects）。没配 Secrets 时此步骤自动跳过。
+      # Gitee 用户名从令牌动态解析（The token username invalid 的坑：不能硬编码猜名字）
       - name: push to gitee mirror
         env:
           GITEE_TOKEN: ${{ secrets.GITEE_TOKEN }}
         if: env.GITEE_TOKEN != ''
         run: |
+          GITEE_USER=$(curl -s "https://gitee.com/api/v5/user?access_token=${GITEE_TOKEN}" | python3 -c "import json,sys; print(json.load(sys.stdin)['login'])")
+          echo "Gitee 用户: $GITEE_USER"
           git config user.name "wf-data-bot"
           git config user.email "actions@users.noreply.github.com"
-          git clone --depth 1 "https://cyxcmiao:${GITEE_TOKEN}@gitee.com/cyxcmiao/wf-data.git" gitee-mirror
+          git clone --depth 1 "https://${GITEE_USER}:${GITEE_TOKEN}@gitee.com/${GITEE_USER}/wf-data.git" gitee-mirror
           cp rivens_pc.json gitee-mirror/
           cd gitee-mirror
           git add rivens_pc.json
